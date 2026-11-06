@@ -20,10 +20,10 @@ export default function SignupPage() {
     setError(null);
     setInfo(null);
 
-    if (password.length < 12) {
-      setError('A senha deve ter pelo menos 12 caracteres.');
-      return;
-    }
+      if (password.length < 12) {
+        setError('Password must be at least 12 characters.');
+        return;
+      }
 
     setLoading(true);
     const supabase = createClient();
@@ -42,32 +42,32 @@ export default function SignupPage() {
       return;
     }
 
-    setInfo('Cadastro criado. Confira seu email para confirmar a conta antes de fazer login.');
+    setInfo('Account created. Check your email to confirm before signing in.');
     setTimeout(() => router.push('/auth/login'), 4000);
   }
 
   return (
     <div className="container" style={{ maxWidth: 420 }}>
-      <h1>Criar conta</h1>
+      <h1>Create account</h1>
       <form onSubmit={onSubmit} className="card" style={{ marginTop: 16 }}>
-        <label className="label">Nome completo</label>
+        <label className="label">Full name</label>
         <input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="input" />
 
-        <label className="label">Nome da sua empresa/workspace</label>
-        <input required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="input" placeholder="Ex: Minha Startup Ltda" />
+        <label className="label">Company/workspace name</label>
+        <input required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="input" placeholder="Ex: My Startup Inc" />
 
         <label className="label">Email</label>
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
 
-        <label className="label">Senha (mín. 12 caracteres, com maiúscula, minúscula, número e símbolo)</label>
+        <label className="label">Password (min. 12 chars, uppercase, lowercase, number, symbol)</label>
         <input type="password" required minLength={12} value={password} onChange={(e) => setPassword(e.target.value)} className="input" />
 
-        <button className="btn" disabled={loading}>{loading ? 'Criando…' : 'Criar conta'}</button>
+        <button className="btn" disabled={loading}>{loading ? 'Creating…' : 'Create account'}</button>
         {error && <p className="error">{error}</p>}
         {info && <p className="success">{info}</p>}
       </form>
       <p>
-        Já tem conta? <Link href="/auth/login">Entrar</Link>
+        Already have an account? <Link href="/auth/login">Sign in</Link>
       </p>
     </div>
   );

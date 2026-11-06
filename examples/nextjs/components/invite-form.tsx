@@ -34,11 +34,11 @@ export function InviteForm({ companyId }: { companyId: string }) {
     setLoading(false);
 
     if (!resp.ok) {
-      setMessage({ kind: 'error', text: body.error?.message ?? 'Erro desconhecido' });
+      setMessage({ kind: 'error', text: body.error?.message ?? 'Unknown error' });
       return;
     }
 
-    setMessage({ kind: 'success', text: 'Convite enviado!' });
+    setMessage({ kind: 'success', text: 'Invitation sent!' });
     setEmail('');
     router.refresh();
   }
@@ -50,14 +50,14 @@ export function InviteForm({ companyId }: { companyId: string }) {
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" style={{ marginBottom: 0 }} />
       </div>
       <div style={{ width: 140 }}>
-        <label className="label">Papel</label>
+        <label className="label">Role</label>
         <select value={role} onChange={(e) => setRole(e.target.value)} className="select" style={{ marginBottom: 0 }}>
           <option value="admin">Admin</option>
           <option value="member">Member</option>
           <option value="viewer">Viewer</option>
         </select>
       </div>
-      <button className="btn" disabled={loading}>{loading ? 'Enviando…' : 'Convidar'}</button>
+      <button className="btn" disabled={loading}>{loading ? 'Sending…' : 'Invite'}</button>
       {message && <p className={message.kind === 'error' ? 'error' : 'success'}>{message.text}</p>}
     </form>
   );

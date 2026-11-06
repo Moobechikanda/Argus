@@ -1,0 +1,39 @@
+# =============================================================================
+# Dockerfile.worker — Python reconciliation workers (import + match)
+# =============================================================================
+# Build:
+#   docker build -t zambase-worker -f Dockerfile.worker .
+# Run (standalone):
+# Run through docker-compose so each worker receives only its own database URL.
+# =============================================================================
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Workers must never process tenant-supplied paths as root. Keep code read-only
+# and provide a single private temporary directory for downloaded objects.
+RUN groupadd --system --gid 10001 reconciliation \
+    && useradd --system --uid 10001 --gid reconciliation --home-dir /nonexistent \
+       --shell /usr/sbin/nologin reconciliation \
+    && install -d -o reconciliation -g reconciliation -m 0700 /tmp/reconciliation
+
+# System deps for psycopg (binary wheel avoids build deps, but keep libpq for safety)
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
+# Application code
+COPY services/ ./services/
+
+# Worker entrypoints
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+ENV TMPDIR=/tmp/reconciliation
+
+USER 10001:10001
+
+# Default: run import worker. Override command for match worker.
+CMD ["python", "-m", "services.reconciliation.imports.worker"]

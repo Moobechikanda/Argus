@@ -209,7 +209,9 @@ async function createInvitation(req: Request): Promise<Response> {
     _company_id: body.company_id,
     _target_table: 'invitations',
     _target_id: inv.id,
-    _metadata: { email: inv.email, role: body.role },
+    // Invitation email is personal data; the invitation row remains the source
+    // of truth and the append-only audit record stores only the assigned role.
+    _metadata: { role: body.role },
   });
 
   // Busca dados para o email

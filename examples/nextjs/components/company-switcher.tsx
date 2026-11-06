@@ -22,7 +22,7 @@ export function CompanySwitcher({ companies, activeCompanyId }: Props) {
     const { error } = await supabase.rpc('set_active_company', { _company_id: newId });
     if (error) {
       setLoading(false);
-      alert('Erro ao trocar empresa: ' + error.message);
+      alert('Error switching company: ' + error.message);
       return;
     }
 

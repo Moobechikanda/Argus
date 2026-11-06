@@ -23,7 +23,7 @@ export function MemberActions({ userId, currentRole, isSelf, callerRole }: Props
   async function onRoleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const newRole = e.target.value;
     if (newRole === currentRole) return;
-    if (!confirm(`Mudar papel para "${newRole}"?`)) return;
+    if (!confirm(`Change role to "${newRole}"?`)) return;
 
     setLoading(true);
     const { error } = await supabase
@@ -33,14 +33,14 @@ export function MemberActions({ userId, currentRole, isSelf, callerRole }: Props
     setLoading(false);
 
     if (error) {
-      alert('Erro: ' + error.message);
+      alert('Error: ' + error.message);
       return;
     }
     router.refresh();
   }
 
   async function onRemove() {
-    if (!confirm('Remover este membro da empresa?')) return;
+    if (!confirm('Remove this member from the company?')) return;
     setLoading(true);
     const { error } = await supabase
       .from('memberships')
@@ -49,7 +49,7 @@ export function MemberActions({ userId, currentRole, isSelf, callerRole }: Props
     setLoading(false);
 
     if (error) {
-      alert('Erro: ' + error.message);
+      alert('Error: ' + error.message);
       return;
     }
     router.refresh();
@@ -67,7 +67,7 @@ export function MemberActions({ userId, currentRole, isSelf, callerRole }: Props
       )}
       {canRemove && (
         <button className="btn danger" style={{ padding: '4px 8px', fontSize: 12 }} onClick={onRemove} disabled={loading}>
-          Remover
+          Remove
         </button>
       )}
     </div>

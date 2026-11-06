@@ -33,7 +33,7 @@ export default function InvitePage() {
     const body = await resp.json();
     if (!resp.ok) {
       setStatus('err');
-      setMessage(body.error?.message ?? 'Erro ao aceitar convite');
+      setMessage(body.error?.message ?? 'Error accepting invitation');
       return;
     }
 
@@ -49,17 +49,17 @@ export default function InvitePage() {
 
   return (
     <div className="container" style={{ maxWidth: 480 }}>
-      <h1>Convite</h1>
+      <h1>Invitation</h1>
       <div className="card">
-        {status === 'loading' && <p>Processando convite…</p>}
-        {status === 'ok' && <p className="success">Convite aceito! Redirecionando…</p>}
+        {status === 'loading' && <p>Processing invitation…</p>}
+        {status === 'ok' && <p className="success">Invitation accepted! Redirecting…</p>}
         {status === 'err' && <p className="error">{message}</p>}
         {status === 'no-auth' && (
           <>
-            <p>Você precisa estar logado para aceitar o convite.</p>
+            <p>You need to be logged in to accept the invitation.</p>
             <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <Link href={`/auth/login?redirect=/invite/${token}`} className="btn">Entrar</Link>
-              <Link href={`/auth/signup?redirect=/invite/${token}`} className="btn ghost">Criar conta</Link>
+              <Link href={`/auth/login?redirect=/invite/${token}`} className="btn">Sign in</Link>
+              <Link href={`/auth/signup?redirect=/invite/${token}`} className="btn ghost">Create account</Link>
             </div>
           </>
         )}

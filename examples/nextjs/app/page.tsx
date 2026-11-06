@@ -5,11 +5,11 @@ export default function Home() {
     <div className="container">
       <h1>Supabase Multi-tenant Starter</h1>
       <p style={{ margin: '16px 0', color: '#666' }}>
-        Template open source para SaaS multi-tenant com autenticação, empresas, papéis e convites.
+        Open-source template for multi-tenant SaaS with authentication, companies, roles, and invitations.
       </p>
       <div style={{ display: 'flex', gap: 12 }}>
-        <Link href="/auth/login" className="btn">Entrar</Link>
-        <Link href="/auth/signup" className="btn ghost">Criar conta</Link>
+        <Link href="/auth/login" className="btn">Sign in</Link>
+        <Link href="/auth/signup" className="btn ghost">Create account</Link>
       </div>
     </div>
   );

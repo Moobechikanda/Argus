@@ -35,18 +35,18 @@ export default async function MembersPage() {
 
   return (
     <div className="container">
-      <Link href="/dashboard">← Voltar ao dashboard</Link>
-      <h1 style={{ marginTop: 16 }}>Membros</h1>
+      <Link href="/dashboard">← Back to dashboard</Link>
+      <h1 style={{ marginTop: 16 }}>Members</h1>
 
       <div className="card">
-        <h2 style={{ marginBottom: 12 }}>Equipe</h2>
+        <h2 style={{ marginBottom: 12 }}>Team</h2>
         <table>
           <thead>
             <tr>
-              <th>Nome</th>
+              <th>Name</th>
               <th>Email</th>
-              <th>Papel</th>
-              <th>Desde</th>
+              <th>Role</th>
+              <th>Since</th>
               {canManage && <th></th>}
             </tr>
           </thead>
@@ -56,7 +56,7 @@ export default async function MembersPage() {
                 <td>{m.profiles?.full_name ?? '—'}</td>
                 <td>{m.profiles?.email}</td>
                 <td><span className={`badge ${m.role}`}>{m.role}</span></td>
-                <td>{new Date(m.joined_at).toLocaleDateString('pt-BR')}</td>
+                <td>{new Date(m.joined_at).toLocaleDateString('en-US')}</td>
                 {canManage && (
                   <td>
                     <MemberActions
@@ -76,19 +76,19 @@ export default async function MembersPage() {
       {canManage && (
         <>
           <div className="card">
-            <h2 style={{ marginBottom: 12 }}>Convidar novo membro</h2>
+            <h2 style={{ marginBottom: 12 }}>Invite new member</h2>
             <InviteForm companyId={companyId} />
           </div>
 
           {invitations && invitations.length > 0 && (
             <div className="card">
-              <h2 style={{ marginBottom: 12 }}>Convites pendentes</h2>
+              <h2 style={{ marginBottom: 12 }}>Pending invitations</h2>
               <table>
                 <thead>
                   <tr>
                     <th>Email</th>
-                    <th>Papel</th>
-                    <th>Expira em</th>
+                    <th>Role</th>
+                    <th>Expires</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -96,7 +96,7 @@ export default async function MembersPage() {
                     <tr key={i.id}>
                       <td>{i.email}</td>
                       <td><span className={`badge ${i.role}`}>{i.role}</span></td>
-                      <td>{new Date(i.expires_at).toLocaleDateString('pt-BR')}</td>
+                      <td>{new Date(i.expires_at).toLocaleDateString('en-US')}</td>
                     </tr>
                   ))}
                 </tbody>

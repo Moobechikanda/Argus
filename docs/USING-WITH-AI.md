@@ -303,8 +303,7 @@ explicar a causa primeiro.
 ### Sinais de alerta â€” pause e revise quando a IA:
 
 - Editar migrations existentes do template (`20260514*.sql`)
-- Adicionar `SUPABASE_SERVICE_ROLE_KEY` em arquivo do `examples/nextjs/`
-  fora de `route.ts` de Server Action explicitamente server-side
+- Adicionar `SUPABASE_SERVICE_ROLE_KEY` ao `examples/nextjs/` ou a um worker; mantenha-a em Edge Functions estritamente limitadas ou em manutenção administrativa
 - Criar policies sem `FORCE ROW LEVEL SECURITY`
 - Fazer INSERT/UPDATE/DELETE em `memberships` direto do client
 - Pular o `created_by = public.auth_uid()` no `WITH CHECK` de INSERT

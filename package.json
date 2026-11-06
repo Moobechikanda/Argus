@@ -1,0 +1,16 @@
+{
+  "name": "zambase",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZamBase — multi-tenant data reconciliation and entity-resolution platform",
+  "scripts": {
+    "dev": "cd examples\\nextjs && npm run dev",
+    "dev:next": "cd examples\\nextjs && npm run dev",
+    "build": "cd examples\\nextjs && npm run build",
+    "lint": "cd examples\\nextjs && npm run lint",
+    "types": "cd examples\\nextjs && npm run types"
+  },
+  "workspaces": [
+    "examples/nextjs"
+  ]
+}

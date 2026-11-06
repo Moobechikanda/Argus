@@ -1,0 +1,15 @@
+# =============================================================================
+# ZamBase — Python reconciliation layer (Stage 0+)
+# =============================================================================
+# Installed in the reconciliation worker/process that talks directly to
+# PostgreSQL (Supabase). Never copied into the Next.js frontend.
+
+# Probabilistic record linkage (Fellegi-Sunter, blocking, clustering).
+splink==3.7.0
+
+# PostgreSQL adapter for Python.
+psycopg[binary,pool]==3.2.2
+httpx==0.27.2
+
+# Env loading for local dev (service_role key is server-side only).
+python-dotenv==1.0.1

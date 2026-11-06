@@ -1,0 +1,6 @@
+id,nome,email,cpf,cidade
+1,Alice Silva,alice@example.com,111.111.111-11,São Paulo
+2,Bob Pereira,bob@example.com,222.222.222-22,Rio de Janeiro
+3,Carla Souza,carla@example.com,333.333.333-33,Belo Horizonte
+4,Alice Silva,alice@example.com,111.111.111-11,São Paulo
+5,David Lima,david@example.com,444.444.444-44,Salvador

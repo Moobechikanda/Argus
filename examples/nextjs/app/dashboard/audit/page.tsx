@@ -3,16 +3,16 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
 const ACTION_LABELS: Record<string, string> = {
-  'company.created': 'Empresa criada',
-  'company.updated': 'Empresa atualizada',
-  'company.deleted': 'Empresa removida',
-  'member.invited': 'Membro convidado',
-  'member.joined': 'Membro entrou',
-  'member.role_changed': 'Papel alterado',
-  'member.removed': 'Membro removido',
-  'member.left': 'Membro saiu',
-  'invitation.revoked': 'Convite revogado',
-  'ownership.transferred': 'Ownership transferido',
+  'company.created': 'Company created',
+  'company.updated': 'Company updated',
+  'company.deleted': 'Company removed',
+  'member.invited': 'Member invited',
+  'member.joined': 'Member joined',
+  'member.role_changed': 'Role changed',
+  'member.removed': 'Member removed',
+  'member.left': 'Member left',
+  'invitation.revoked': 'Invitation revoked',
+  'ownership.transferred': 'Ownership transferred',
 };
 
 export default async function AuditPage() {
@@ -29,25 +29,25 @@ export default async function AuditPage() {
 
   return (
     <div className="container">
-      <Link href="/dashboard">← Voltar ao dashboard</Link>
-      <h1 style={{ marginTop: 16 }}>Auditoria</h1>
-      <p style={{ color: '#666', marginBottom: 16 }}>Últimas 100 ações na empresa ativa.</p>
+      <Link href="/dashboard">← Back to dashboard</Link>
+      <h1 style={{ marginTop: 16 }}>Audit</h1>
+      <p style={{ color: '#666', marginBottom: 16 }}>Last 100 actions on the active company.</p>
 
       <div className="card">
         <table>
           <thead>
             <tr>
-              <th>Quando</th>
-              <th>Quem</th>
-              <th>Ação</th>
-              <th>Detalhes</th>
+              <th>When</th>
+              <th>Who</th>
+              <th>Action</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
             {(logs ?? []).map((l: any) => (
               <tr key={l.id}>
-                <td>{new Date(l.created_at).toLocaleString('pt-BR')}</td>
-                <td>{l.profiles?.full_name ?? l.profiles?.email ?? 'sistema'}</td>
+                <td>{new Date(l.created_at).toLocaleString('en-US')}</td>
+                <td>{l.profiles?.full_name ?? l.profiles?.email ?? 'system'}</td>
                 <td>{ACTION_LABELS[l.action] ?? l.action}</td>
                 <td><code style={{ fontSize: 12 }}>{JSON.stringify(l.metadata)}</code></td>
               </tr>

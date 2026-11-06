@@ -104,3 +104,7 @@ inspector_port = 8083
 
 [functions.invitations]
 verify_jwt = true
+
+# A live, job-scoped claim token is checked against the database lease.
+[functions.import-download-url]
+verify_jwt = false

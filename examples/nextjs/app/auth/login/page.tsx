@@ -35,9 +35,9 @@ function LoginForm() {
     <form onSubmit={onSubmit} className="card" style={{ marginTop: 16 }}>
       <label className="label">Email</label>
       <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
-      <label className="label">Senha</label>
+      <label className="label">Password</label>
       <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="input" />
-      <button className="btn" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
+      <button className="btn" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
       {error && <p className="error">{error}</p>}
     </form>
   );
@@ -46,12 +46,12 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="container" style={{ maxWidth: 420 }}>
-      <h1>Entrar</h1>
-      <Suspense fallback={<div className="card" style={{ marginTop: 16 }}>Carregando…</div>}>
+      <h1>Sign in</h1>
+      <Suspense fallback={<div className="card" style={{ marginTop: 16 }}>Loading…</div>}>
         <LoginForm />
       </Suspense>
       <p>
-        Não tem conta? <Link href="/auth/signup">Criar agora</Link>
+        Don't have an account? <Link href="/auth/signup">Create now</Link>
       </p>
     </div>
   );

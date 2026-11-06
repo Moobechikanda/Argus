@@ -13,7 +13,7 @@ SET search_path TO extensions, public, auth;
 -- =============================================================================
 -- Setup: cria 3 usuários e 1 empresa (alice=owner, bob=member, eve=fora)
 -- =============================================================================
-SELECT plan(15);
+SELECT plan(26);
 
 INSERT INTO auth.users (id, email, instance_id, aud, role, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, confirmation_token, email_change, email_change_token_new, recovery_token, created_at, updated_at)
 VALUES
@@ -200,6 +200,239 @@ SELECT isnt(
     'Hacked',
     'usuário não consegue alterar perfil alheio'
 );
+
+-- =============================================================================
+-- Setup adicional para reconciliação: 2ª empresa (co-b) fora do escopo de alice/bob
+-- =============================================================================
+INSERT INTO public.companies (id, name, slug, created_by) VALUES
+    ('22222222-2222-2222-2222-222222222222', 'Co B', 'co-b', 'cccccccc-cccc-cccc-cccc-cccccccccccc')
+ON CONFLICT DO NOTHING;
+
+-- import_job de alice na empresa de teste (test-co)
+INSERT INTO public.reconciliation_import_jobs (
+    id, company_id, data_source_id, status, file_ref, row_count, error_count, created_by
+) VALUES
+    ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', NULL,
+     'completed', 's3://bucket/file.csv', 10, 0, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+ON CONFLICT DO NOTHING;
+
+-- source_record de alice na empresa de teste
+INSERT INTO public.reconciliation_source_records (
+    id, import_job_id, company_id, source_record_id, raw_data, normalized_data, row_hash
+) VALUES
+    ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333',
+     '11111111-1111-1111-1111-111111111111', 'SRC-001',
+     '{"name":"Alice","cpf":"111"}'::jsonb, '{"name":"Alice"}'::jsonb,
+     'hash-alice-001')
+ON CONFLICT DO NOTHING;
+
+-- entidade de alice na empresa de teste
+INSERT INTO public.reconciliation_entities (
+    id, company_id, canonical_data, record_count, status, created_by
+) VALUES
+    ('55555555-5555-5555-5555-555555555555', '11111111-1111-1111-1111-111111111111',
+     '{"name":"Alice"}'::jsonb, 1, 'candidate', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- Test 16: tenant isolation — eve (não-membro) não vê source_records de alice
+-- =============================================================================
+SELECT test_as_user('cccccccc-cccc-cccc-cccc-cccccccccccc');
+
+SELECT ok(
+    NOT EXISTS(
+        SELECT 1 FROM public.reconciliation_source_records
+        WHERE id = '44444444-4444-4444-4444-444444444444'
+    ),
+    'não-membro NÃO vê registros fonte de outra empresa'
+);
+
+SELECT ok(
+    NOT EXISTS(
+        SELECT 1 FROM public.reconciliation_entities
+        WHERE id = '55555555-5555-5555-5555-555555555555'
+    ),
+    'não-membro NÃO vê entidades de outra empresa'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 17: tenant isolation — bob (member da empresa de alice) vê source_records
+-- =============================================================================
+SELECT test_as_user('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+
+SELECT ok(
+    EXISTS(
+        SELECT 1 FROM public.reconciliation_source_records
+        WHERE id = '44444444-4444-4444-4444-444444444444'
+    ),
+    'member vê registros fonte de sua própria empresa'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 18: RBAC — viewer não consegue INSERT em import_jobs
+-- (precisaríamos de um viewer; reutilizamos eve como não-membro -> espera 42501/0 linhas)
+-- Aqui validamos que member pode criar e viewer não. Sem usuário viewer cadastrado,
+-- validamos que o INSERT com created_by diferente do auth_uid é rejeitado pelo WITH CHECK.
+-- =============================================================================
+SELECT test_as_user('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+
+-- bob cria um import_job na própria empresa (deve funcionar)
+INSERT INTO public.reconciliation_import_jobs (
+    id, company_id, status, file_ref, created_by
+) VALUES
+    ('66666666-6666-6666-6666-666666666666', '11111111-1111-1111-1111-111111111111',
+     'pending', 's3://bucket/file2.csv', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+ON CONFLICT DO NOTHING;
+
+SELECT test_reset();
+
+SELECT ok(
+    EXISTS(
+        SELECT 1 FROM public.reconciliation_import_jobs
+        WHERE id = '66666666-6666-6666-6666-666666666666'
+    ),
+    'member consegue criar import_job na própria empresa'
+);
+
+-- =============================================================================
+-- Test 19: RBAC — member não consegue alterar status de entidade para 'confirmed'
+-- (apenas admin+ pode atualizar entidades; RLS UPDATE com has_role_in admin bloqueia)
+-- =============================================================================
+SELECT test_as_user('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+
+UPDATE public.reconciliation_entities
+SET status = 'confirmed'::public.reconciliation_entity_status,
+    updated_at = now()
+WHERE id = '55555555-5555-5555-5555-555555555555';
+
+SELECT test_reset();
+
+SELECT is(
+    (SELECT status::text FROM public.reconciliation_entities
+     WHERE id = '55555555-5555-5555-5555-555555555555'),
+    'candidate',
+    'member NÃO consegue confirmar entidade (RLS bloqueia)'
+);
+
+-- =============================================================================
+-- Test 20: RBAC — admin consegue alterar entidade (alice é owner)
+-- =============================================================================
+SELECT test_as_user('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+UPDATE public.reconciliation_entities
+SET status = 'confirmed'::public.reconciliation_entity_status,
+    updated_at = now()
+WHERE id = '55555555-5555-5555-5555-555555555555';
+
+SELECT test_reset();
+
+SELECT is(
+    (SELECT status::text FROM public.reconciliation_entities
+     WHERE id = '55555555-5555-5555-5555-555555555555'),
+    'confirmed',
+    'owner consegue confirmar entidade'
+);
+
+-- =============================================================================
+-- Test 21: imutabilidade — UPDATE em source_records é rejeitado (trigger + RLS)
+-- =============================================================================
+-- Como superuser, o trigger ainda impede (SECURITY DEFINER levanta exceção).
+SELECT throws_ok(
+    $$UPDATE public.reconciliation_source_records
+      SET raw_data = '{"name":"Hacked"}'::jsonb
+      WHERE id = '44444444-4444-4444-4444-444444444444'$$,
+    '23514',
+    NULL,
+    'UPDATE em registro fonte é bloqueado (imutável)'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 22: imutabilidade — DELETE em source_records é rejeitado
+-- =============================================================================
+SELECT throws_ok(
+    $$DELETE FROM public.reconciliation_source_records
+      WHERE id = '44444444-4444-4444-4444-444444444444'$$,
+    '23514',
+    NULL,
+    'DELETE em registro fonte é bloqueado (imutável)'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 23: idempotência — mesmo source_record_id + row_hash num job não duplica
+-- =============================================================================
+-- Como superuser (bypass RLS), tenta inserir duplicata; o índice único impede.
+SELECT throws_ok(
+    $$INSERT INTO public.reconciliation_source_records (
+        id, import_job_id, company_id, source_record_id, raw_data, normalized_data, row_hash
+    ) VALUES (
+        '77777777-7777-7777-7777-777777777777', '33333333-3333-3333-3333-333333333333',
+        '11111111-1111-1111-1111-111111111111', 'SRC-001',
+        '{"name":"Dup"}'::jsonb, '{"name":"Dup"}'::jsonb, 'hash-alice-001'
+    )$$,
+    '23505',
+    NULL,
+    'registro fonte duplicado (mesmo job + source_record_id + row_hash) é rejeitado'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 24: tenant isolation — source_records de outra empresa (co-b) não visíveis
+-- =============================================================================
+INSERT INTO public.reconciliation_source_records (
+    id, import_job_id, company_id, source_record_id, raw_data, normalized_data, row_hash
+) VALUES
+    ('88888888-8888-8888-8888-888888888888', '33333333-3333-3333-3333-333333333333',
+     '22222222-2222-2222-2222-222222222222', 'SRC-COB-001',
+     '{"name":"CoB"}'::jsonb, '{"name":"CoB"}'::jsonb, 'hash-cob-001')
+ON CONFLICT DO NOTHING;
+
+SELECT test_as_user('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+SELECT ok(
+    NOT EXISTS(
+        SELECT 1 FROM public.reconciliation_source_records
+        WHERE id = '88888888-8888-8888-8888-888888888888'
+    ),
+    'owner de empresa A não vê registros fonte da empresa B'
+);
+
+SELECT test_reset();
+
+-- =============================================================================
+-- Test 25: authenticated user records an event only for their own tenant.
+-- =============================================================================
+SELECT test_as_user('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+
+SELECT public.log_audit(
+    'entity.created'::public.audit_action,
+    '11111111-1111-1111-1111-111111111111',
+    NULL,
+    'reconciliation_entities', '55555555-5555-5555-5555-555555555555',
+    '{"status": "candidate"}'::jsonb
+);
+
+SELECT test_reset();
+
+SELECT ok(
+    EXISTS(
+        SELECT 1 FROM public.audit_log
+        WHERE action = 'entity.created'::public.audit_action
+          AND company_id = '11111111-1111-1111-1111-111111111111'
+          AND target_table = 'reconciliation_entities'
+    ),
+    'log_audit grava evento dentro do tenant do usuário'
+);
+
+SELECT test_reset();
 
 -- =============================================================================
 SELECT * FROM finish();

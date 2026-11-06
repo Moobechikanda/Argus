@@ -1,0 +1,74 @@
+# =============================================================================
+# docker-compose.yml — ZamBase MVP orchestration
+# =============================================================================
+# Prerequisites: Supabase running locally (docker supabase start or stack already up)
+#   Supabase DB:   postgres://postgres:postgres@127.0.0.1:54322/postgres
+#   Supabase URL:  http://127.0.0.1:54321
+#   Next.js:       http://localhost:3000
+#
+# Usage:
+#   docker compose up --build
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Next.js frontend (App Router + Server Actions)
+  # ---------------------------------------------------------------------------
+  nextjs:
+    build:
+      context: ./examples/nextjs
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=http://host.docker.internal:54321
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+    depends_on:
+      - worker-import
+      - worker-match
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Import worker — dedicated database login and public API key only.
+  # ---------------------------------------------------------------------------
+  worker-import:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    command: python -m services.reconciliation.imports.worker
+    environment:
+      - SUPABASE_IMPORT_WORKER_DB_URL=${SUPABASE_IMPORT_WORKER_DB_URL}
+      - SUPABASE_URL=http://host.docker.internal:54321
+      - SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - RECONCILIATION_POLL_INTERVAL=5
+      - TMPDIR=/tmp/reconciliation
+    read_only: true
+    tmpfs:
+      - /tmp/reconciliation:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=0700
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Python match worker — polls reconciliation_reconciliation_runs, runs Splink matching
+  # ---------------------------------------------------------------------------
+  worker-match:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    command: python -m services.reconciliation.matching.splink_worker
+    environment:
+      - SUPABASE_MATCHING_WORKER_DB_URL=${SUPABASE_MATCHING_WORKER_DB_URL}
+      - RECONCILIATION_POLL_INTERVAL=5
+      - TMPDIR=/tmp/reconciliation
+    read_only: true
+    tmpfs:
+      - /tmp/reconciliation:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=0700
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
